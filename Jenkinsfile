@@ -11,6 +11,13 @@ pipeline {
             }
         }
 
+        stage("Trivy File System Scanned"){
+            steps {
+                echo ' Scanning The File System By Trivy '
+                sh 'trivy fs . -o results.json'
+            }
+        }
+
         stage('build') {
             steps {
                 echo 'Building Projects using Docker'
