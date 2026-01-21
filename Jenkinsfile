@@ -1,3 +1,5 @@
+@Libary("Shared") _
+
 pipeline {
     agent {
         label "dev"
@@ -7,21 +9,22 @@ pipeline {
         stage('code') {
             steps {
                 echo 'Cloning Code'
-                git url: 'https://github.com/heysarojkrtharu/two-tier-flask-app.git', branch: 'master'
+
+                clone('https://github.com/heysarojkrtharu/two-tier-flask-app.git',  'master')
             }
         }
 
         stage("Trivy File System Scanned"){
             steps {
                 echo ' Scanning The File System By Trivy '
-                sh 'trivy fs . -o results.json'
+                trivy_scan()
             }
         }
 
         stage('build') {
             steps {
                 echo 'Building Projects using Docker'
-                sh 'docker build -t two-tier-flask-app .'
+                docker_build("two-tier-flask-app")
             }
         }
 
@@ -33,16 +36,8 @@ pipeline {
         stage("push to dockerhub"){
             steps {
                 echo " Pushing to docker hub "
-                withCredentials(
-                    [usernamePassword(
-                        credentialsId: "dockerHubCreds",
-                        passwordVariable:"dockerHubPass" ,
-                        usernameVariable:"dockerHubUser" )]
-                    ){
-                    sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                    sh "docker image tag two-tier-flask-app ${env.dockerHubUser}/two-tier-flask-app"
-                    sh " docker push ${env.dockerHubUser}/two-tier-flask-app:latest "
-                }
+
+                docker_push("two-tier-flask-app", "dockerHubCreds")
                 
             }
         }
